@@ -11,32 +11,34 @@ import (
 	"time"
 )
 
-// PaymentRequest represents the request payload for payment processing
-type PaymentRequest struct {
-	CorrelationID string    `json:"correlationId"`
-	Amount        float64   `json:"amount"`
-	RequestedAt   time.Time `json:"requestedAt"`
-}
+type (
+	// PaymentRequest represents the request payload for payment processing
+	PaymentRequest struct {
+		CorrelationID string    `json:"correlationId"`
+		Amount        float64   `json:"amount"`
+		RequestedAt   time.Time `json:"requestedAt"`
+	}
 
-// PaymentResponse represents the response from payment processors
-type PaymentResponse struct {
-	Message string `json:"message"`
-}
+	// PaymentResponse represents the response from payment processors
+	PaymentResponse struct {
+		Message string `json:"message"`
+	}
 
-// HealthResponse represents the health check response
-type HealthResponse struct {
-	Failing         bool `json:"failing"`
-	MinResponseTime int  `json:"minResponseTime"`
-}
+	// HealthResponse represents the health check response
+	HealthResponse struct {
+		Failing         bool `json:"failing"`
+		MinResponseTime int  `json:"minResponseTime"`
+	}
 
-// Client represents a payment processor client
-type Client struct {
-	baseURL    string
-	httpClient *http.Client
-	mu         sync.RWMutex
-	lastHealth *HealthResponse
-	lastCheck  time.Time
-}
+	// Client represents a payment processor client
+	Client struct {
+		baseURL    string
+		httpClient *http.Client
+		mu         sync.RWMutex
+		lastHealth *HealthResponse
+		lastCheck  time.Time
+	}
+)
 
 // NewClient creates a new payment processor client with optimized HTTP settings
 func NewClient(baseURL string) *Client {

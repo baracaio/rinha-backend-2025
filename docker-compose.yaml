@@ -1,0 +1,98 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "9999:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+    networks:
+      - backend
+      - payment-processor
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: "30MB"
+    restart: unless-stopped
+
+  api1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - PORT=8080
+      - PAYMENT_PROCESSOR_DEFAULT=http://payment-processor-default:8080
+      - PAYMENT_PROCESSOR_FALLBACK=http://payment-processor-fallback:8080
+      - DATABASE_PATH=/app/data/payments1.db
+      - WORKER_COUNT=4
+      - QUEUE_SIZE=5000
+      - RETRY_QUEUE_SIZE=500
+      - MAX_RETRIES=5
+      - GOMAXPROCS=1
+      - GOGC=100
+    volumes:
+      - api1_data:/app/data
+    networks:
+      - backend
+      - payment-processor
+    deploy:
+      resources:
+        limits:
+          cpus: "0.70"
+          memory: "310MB"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  api2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - PORT=8080
+      - PAYMENT_PROCESSOR_DEFAULT=http://payment-processor-default:8080
+      - PAYMENT_PROCESSOR_FALLBACK=http://payment-processor-fallback:8080
+      - DATABASE_PATH=/app/data/payments2.db
+      - WORKER_COUNT=4
+      - QUEUE_SIZE=5000
+      - RETRY_QUEUE_SIZE=500
+      - MAX_RETRIES=5
+      - GOMAXPROCS=1
+      - GOGC=100
+    volumes:
+      - api2_data:/app/data
+    networks:
+      - backend
+      - payment-processor
+    deploy:
+      resources:
+        limits:
+          cpus: "0.70"
+          memory: "310MB"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  api1_data:
+  api2_data:
+
+networks:
+  backend:
+    driver: bridge
+  payment-processor:
+    external: true
